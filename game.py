@@ -1,5 +1,6 @@
 import tkinter
 from tkinter import filedialog
+from tkinter import messagebox
 import csv
 
 class Player(object):
@@ -24,7 +25,7 @@ class Maze(object):
                   self.player.x, self.player.y,
                   self.player.x+int(self.col_step * self.player_size), self.player.y+int(self.row_step * self.player_size),
                   fill='blue') #create new oval
-          print("Player now at %d,%d" % (self.player.x, self.player.y))
+          # print("Player now at %d,%d" % (self.player.x, self.player.y))
 
     def no_wall(self, row: int, col: int) -> bool:
       """
@@ -88,6 +89,9 @@ class Maze(object):
                 self.player = Player(row, col)
                 self.redraw_player()
 
+    def exactly_one_player(self):
+        return 1 == [item for row in self.spreadsheet for item in row].count('P')
+
     def open_file(self):
 #Turn spreadsheet into 2D list
         f = filedialog.askopenfile()
@@ -95,8 +99,11 @@ class Maze(object):
             self.spreadsheet = list(csv.reader(f, dialect='excel'))
             self.row_len = len(self.spreadsheet)
             self.col_len = len(self.spreadsheet[0])
-            self.redraw_canvas()
-            self.loaded = True
+            if self.exactly_one_player():
+                self.redraw_canvas()
+                self.loaded = True
+            else:
+                messagebox.showerror('Invalid Maze Format', 'Maze must have exactly one \'P\'')
 
 
 def attach_menus(window, maze):
