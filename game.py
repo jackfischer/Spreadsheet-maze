@@ -1,5 +1,6 @@
 import tkinter
 from tkinter import filedialog
+from tkinter import messagebox
 import csv
 
 class Player(object):
@@ -12,6 +13,8 @@ class Maze(object):
     def __init__(self, canvas, player_size=.6):
         self.canvas = canvas
         self.player_size = player_size
+        self.player = None
+        self.loaded = False
 
     def redraw_player(self):
           self.canvas.delete(self.player.tkinter_id)
@@ -22,7 +25,7 @@ class Maze(object):
                   self.player.x, self.player.y,
                   self.player.x+int(self.col_step * self.player_size), self.player.y+int(self.row_step * self.player_size),
                   fill='blue') #create new oval
-          print("Player now at %d,%d" % (self.player.x, self.player.y))
+          # print("Player now at %d,%d" % (self.player.x, self.player.y))
 
     def no_wall(self, row: int, col: int) -> bool:
       """
@@ -60,6 +63,35 @@ class Maze(object):
         self.player.row = future_row
       self.redraw_player()
 
+    def redraw_canvas(self):
+        """
+        Scales the maze into the canvas based on window size.
+        """
+#Get canvas size
+        self.row_step = int(canvas.winfo_height()) // self.row_len
+        self.col_step = int(canvas.winfo_width()) // self.col_len
+
+#Traverse 2D list and draw board
+        self.canvas.delete('all')
+        for row in range(self.row_len):
+          for col in range(self.col_len):
+            if self.spreadsheet[row][col] == 'X':
+              y0 = row * self.row_step
+              x0 = col * self.col_step
+              y1 = y0 + self.row_step
+              x1 = x0 + self.col_step
+              self.canvas.create_rectangle(x0, y0, x1, y1, fill='pink')
+#This section feels messy
+            if self.player:
+                self.redraw_player()
+            if self.spreadsheet[row][col] == 'P':
+                self.spreadsheet[row][col] = 'O'
+                self.player = Player(row, col)
+                self.redraw_player()
+
+    def exactly_one_player(self):
+        return 1 == [item for row in self.spreadsheet for item in row].count('P')
+
     def open_file(self):
 #Turn spreadsheet into 2D list
         f = filedialog.askopenfile()
@@ -67,23 +99,12 @@ class Maze(object):
             self.spreadsheet = list(csv.reader(f, dialect='excel'))
             self.row_len = len(self.spreadsheet)
             self.col_len = len(self.spreadsheet[0])
-            self.row_step = int(canvas['height']) // self.row_len
-            self.col_step = int(canvas['width']) // self.col_len
+            if self.exactly_one_player():
+                self.redraw_canvas()
+                self.loaded = True
+            else:
+                messagebox.showerror('Invalid Maze Format', 'Maze must have exactly one \'P\'')
 
-#Traverse 2D list and draw board
-            self.canvas.delete('all')
-            for row in range(self.row_len):
-              for col in range(self.col_len):
-                if self.spreadsheet[row][col] == 'X':
-                  y0 = row * self.row_step
-                  x0 = col * self.col_step
-                  y1 = y0 + self.row_step
-                  x1 = x0 + self.col_step
-                  self.canvas.create_rectangle(x0, y0, x1, y1, fill='pink')
-                if self.spreadsheet[row][col] == 'P':
-                    self.spreadsheet[row][col] = 'O'
-                    self.player = Player(row, col)
-                    self.redraw_player()
 
 def attach_menus(window, maze):
     menubar = tkinter.Menu(window)
@@ -95,9 +116,10 @@ def attach_menus(window, maze):
 if __name__ == '__main__':
 #Set up window
     window = tkinter.Tk()
-    window.resizable(width=False, height=False)
+    # window.resizable(width=False, height=False)
     canvas = tkinter.Canvas(window, width=500, height=500)
-    canvas.grid()
+    # canvas.grid()
+    canvas.pack(fill=tkinter.BOTH, expand=tkinter.YES)
     maze = Maze(canvas)
     attach_menus(window, maze)
 
@@ -114,9 +136,14 @@ if __name__ == '__main__':
     def down(event):
         maze.down()
 
+    def resize(event):
+        if maze.loaded:
+            maze.redraw_canvas()
+
     window.bind('<Left>', left)
     window.bind('<Right>', right)
     window.bind('<Down>', down)
     window.bind('<Up>', up)
+    window.bind('<Configure>', resize)
 
     window.mainloop()

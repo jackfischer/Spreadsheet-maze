@@ -3,10 +3,10 @@ Small experiment with tkinter - this is a maze game where the levels can be desi
 ## Features
 - Place starting player at any point in grid.
 - Board scales to window.
-- Select CSV from GUI
+- Select CSV from GUI.
+- Dynamic window resizing / maze scaling.
 
 ## TODO (maybe)
-- Add dynamic window resizing
 - Add checking for multiple players placed in grid.
-- Add "checkpoint/finish" square
-- Add progress/save files
+- Add "checkpoint/finish" square.
+- Add progress/save files.
