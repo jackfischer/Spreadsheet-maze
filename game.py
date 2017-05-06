@@ -23,13 +23,14 @@ class Maze(object):
           self.player.y = self.player.row * self.row_step + int(self.row_step * (1-self.player_size)/2)
           self.player.tkinter_id = self.canvas.create_oval(
                   self.player.x, self.player.y,
-                  self.player.x+int(self.col_step * self.player_size), self.player.y+int(self.row_step * self.player_size),
+                  self.player.x+int(self.col_step * self.player_size),
+                  self.player.y+int(self.row_step * self.player_size),
                   fill='blue') #create new oval
           # print("Player now at %d,%d" % (self.player.x, self.player.y))
 
     def no_wall(self, row: int, col: int) -> bool:
       """
-      Function called after a keypress to check theoretical new location against
+      Called after a keypress to check theoretical new location against
       spreadsheet. Returns boolean indicating whether there's a wall
       """
       if col < 0 or col == self.col_len: #going outside the board horizontally
@@ -39,25 +40,26 @@ class Maze(object):
       return self.spreadsheet[row][col] == 'O'
 
 #Functions called after keypresses
-    def left(self):
+#TODO refactor this
+    def left(self, event):
       future_col = self.player.col - 1
       if self.no_wall(self.player.row, future_col):
         self.player.col = future_col
       self.redraw_player()
 
-    def right(self):
+    def right(self, event):
       future_col = self.player.col + 1
       if self.no_wall(self.player.row, future_col):
         self.player.col = future_col
       self.redraw_player()
 
-    def up(self):
+    def up(self, event):
       future_row = self.player.row - 1
       if self.no_wall(future_row, self.player.col):
         self.player.row = future_row
       self.redraw_player()
 
-    def down(self):
+    def down(self, event):
       future_row = self.player.row + 1
       if self.no_wall(future_row, self.player.col):
         self.player.row = future_row
@@ -114,7 +116,7 @@ def attach_menus(window, maze):
     window.config(menu=menubar)
 
 if __name__ == '__main__':
-#Set up window
+    #Set up window
     window = tkinter.Tk()
     # window.resizable(width=False, height=False)
     canvas = tkinter.Canvas(window, width=500, height=500)
@@ -123,27 +125,10 @@ if __name__ == '__main__':
     maze = Maze(canvas)
     attach_menus(window, maze)
 
-#Functions called after keypresses
-    def left(event):
-        maze.left()
-
-    def right(event):
-        maze.right()
-
-    def up(event):
-        maze.up()
-
-    def down(event):
-        maze.down()
-
-    def resize(event):
-        if maze.loaded:
-            maze.redraw_canvas()
-
-    window.bind('<Left>', left)
-    window.bind('<Right>', right)
-    window.bind('<Down>', down)
-    window.bind('<Up>', up)
-    window.bind('<Configure>', resize)
+    window.bind('<Left>', maze.left)
+    window.bind('<Right>', maze.right)
+    window.bind('<Down>', maze.down)
+    window.bind('<Up>', maze.up)
+    window.bind('<Configure>', lambda event: maze.redraw_canvas() if maze.loaded else None)
 
     window.mainloop()
