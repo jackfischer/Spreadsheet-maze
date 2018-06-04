@@ -1,7 +1,11 @@
+# Python 3
+
 import tkinter
 from tkinter import filedialog
 from tkinter import messagebox
 import csv
+from functools import partial
+
 
 class Player(object):
     def __init__(self, row, col):
@@ -39,41 +43,23 @@ class Maze(object):
         return False
       return self.spreadsheet[row][col] == 'O'
 
-#Functions called after keypresses
-#TODO refactor this
-    def left(self, event):
-      future_col = self.player.col - 1
-      if self.no_wall(self.player.row, future_col):
-        self.player.col = future_col
-      self.redraw_player()
-
-    def right(self, event):
-      future_col = self.player.col + 1
-      if self.no_wall(self.player.row, future_col):
-        self.player.col = future_col
-      self.redraw_player()
-
-    def up(self, event):
-      future_row = self.player.row - 1
-      if self.no_wall(future_row, self.player.col):
-        self.player.row = future_row
-      self.redraw_player()
-
-    def down(self, event):
-      future_row = self.player.row + 1
-      if self.no_wall(future_row, self.player.col):
-        self.player.row = future_row
-      self.redraw_player()
+    def attempt_move(self, event, delta):
+        future_row = self.player.row + delta[0]
+        future_col = self.player.col + delta[1]
+        if self.no_wall(future_row, future_col):
+            self.player.row = future_row
+            self.player.col = future_col
+        self.redraw_player()
 
     def redraw_canvas(self):
         """
         Scales the maze into the canvas based on window size.
         """
-#Get canvas size
+        #Get canvas size
         self.row_step = int(canvas.winfo_height()) // self.row_len
         self.col_step = int(canvas.winfo_width()) // self.col_len
 
-#Traverse 2D list and draw board
+        #Traverse 2D list and draw board
         self.canvas.delete('all')
         for row in range(self.row_len):
           for col in range(self.col_len):
@@ -83,7 +69,7 @@ class Maze(object):
               y1 = y0 + self.row_step
               x1 = x0 + self.col_step
               self.canvas.create_rectangle(x0, y0, x1, y1, fill='pink')
-#This section feels messy
+            #TODO This section feels messy
             if self.player:
                 self.redraw_player()
             if self.spreadsheet[row][col] == 'P':
@@ -95,7 +81,7 @@ class Maze(object):
         return 1 == [item for row in self.spreadsheet for item in row].count('P')
 
     def open_file(self):
-#Turn spreadsheet into 2D list
+        #Turn spreadsheet into 2D list
         f = filedialog.askopenfile()
         if f:
             self.spreadsheet = list(csv.reader(f, dialect='excel'))
@@ -118,17 +104,17 @@ def attach_menus(window, maze):
 if __name__ == '__main__':
     #Set up window
     window = tkinter.Tk()
-    # window.resizable(width=False, height=False)
+    window.title("Spreadsheet Maze")
+    window.lift()
     canvas = tkinter.Canvas(window, width=500, height=500)
-    # canvas.grid()
     canvas.pack(fill=tkinter.BOTH, expand=tkinter.YES)
     maze = Maze(canvas)
     attach_menus(window, maze)
 
-    window.bind('<Left>', maze.left)
-    window.bind('<Right>', maze.right)
-    window.bind('<Down>', maze.down)
-    window.bind('<Up>', maze.up)
+    window.bind('<Left>', partial(maze.attempt_move, delta=(0,-1)))
+    window.bind('<Right>', partial(maze.attempt_move, delta=(0,1)))
+    window.bind('<Down>', partial(maze.attempt_move, delta=(1,0)))
+    window.bind('<Up>', partial(maze.attempt_move, delta=(-1,0)))
     window.bind('<Configure>', lambda event: maze.redraw_canvas() if maze.loaded else None)
 
     window.mainloop()
